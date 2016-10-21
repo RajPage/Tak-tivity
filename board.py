@@ -1,6 +1,6 @@
 #Rajkumar Pagey
 #Board is used for Board Representation, Piece Representation and State Updation
-#This Version is just for Demo
+#This Version is just for Prototyping purpose
 
 from pythonds.basic.stack import Stack
 
@@ -10,12 +10,89 @@ class Board:
         if(N==5):
             self.WPiece = 21
             self.BPiece = 21
+
+    def check(self, Player):
+        pos = 0
+        F = 'F'                 #Caps for White and lower case for black
+        S = 'S'
+        C = 'C'
         
+        if(int(Player) != 1):
+            F='f'
+            S='s'
+            C='c'
+
+        while(True):
+            if(pos<0):
+                break
+            
+            if(not self.B[pos].isEmpty()):
+                if(self.B[pos]==F or self.B[pos]==C):
+                    if(pos>self.N*(self.N-1)):
+                        if(not self.B[pos+self.N].isEmpty()):
+                           if(self.B[pos+self.N].peek()==F or self.B[pos+self.N].peek()==C):
+                                pos += self.N
+                        elif(pos%N!=0):
+                            if(self.B[pos-1].isEmpty()):
+                                if(self.B[pos-1].peek()==F or self.B[pos-1].peek()==C):
+                                    pos -= 1
+                    elif(pos%N!=N-1 and not self.B[pos+1].isEmpty()):
+                        if(self.B[pos+1].peek()==F or self.B[pos+1].peek()==C):
+                            pos += 1
+                else:
+                    self.Win = True;
+                    self.Winner = Player
+                    break
+            elif(pos<self.N-1):
+                pos +=1
+            elif(pos>self.N):
+                pos -= self.N
+            else:
+                break
+            #print(pos)
+        pos = 0
+#Incomplete:::
+
+        i = 0;
+        while(True):
+            if(pos<0):
+                break
+
+            
+            
+            #print(pos)
+            if(not self.B[pos].isEmpty()):
+                if(self.B[pos].peek()==F or self.B[pos].peek()==C):
+                    #print(self.B[pos+1].isEmpty())
+                    if((pos%self.N)<(self.N-1) and (not self.B[pos+1].isEmpty())):
+                        if(self.B[pos+1].peek()==F or self.B[pos+1].peek()==C):
+                            pos += 1
+                    elif(pos>self.N and not self.B[pos-self.N].isEmpty()):
+                            if(self.B[pos-self.N].peek()==F or self.B[pos-self.N].peek()==C):
+                                pos -= self.N
+                    elif(pos<(self.N*(self.N-1)) and not self.B[pos+self.N].isEmpty()):
+                            if(self.B[pos+self.N].peek()==F or self.B[pos+self.N].peek()==C):
+                                pos += self.N
+                    
+                    if(pos%self.N==self.N-1):
+                        self.Win = True;
+                        self.Winner = Player
+                        print(self.Winner,end=F)
+                        print(" is the Winner")
+                        break
+            if(pos%self.N==0 and pos<self.N*(self.N-1)):
+                    pos += self.N
+            if(i>25):
+                break    
+            #print(F)
+            i +=1
     
     def __init__(self):
         #Initialize Board
         self.N = 5
         self.B = []
+        self.Win = False
+        self.Winner = ""
         for x in range(self.N*self.N):
             self.B.append(Stack())
 
@@ -94,6 +171,12 @@ class Board:
             if(Str[0]=='S'):
                 T = 5*(ord(Str[1]) - 97) + int(Str[2]) - 1
                 self.B[T].push(S)
+
+        #self.check(Player)
+        #if(self.Win):
+         #   print(self.Winner)
+         #   print(" is the Winner")
+
         
             
     def show(self):                         #This is for Debugging, but I'll need to use some GUI for proper Stack view #TODO
