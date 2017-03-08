@@ -205,4 +205,127 @@ class Board:
         return True
 
 
+    #TODO: Flat Victory
+    def checkVictory(self):                 #Two Types of Victories
+        if self.__checkRoadVictory(1):              #Road Victory
+            return 1
+        elif self.__checkRoadVictory(2):
+            return -1
+        #elif self.__checkFlatVictory(1):           #Flat Victory        
+
+
+    def __getNeighbour(self, pos):                        #Sorry for the Ambiguity between N(Neighbour) and self.N(Board Size)
+        N = []
+        if pos<0 or pos>=(self.N*self.N):                   #Outside
+            return N
+        elif pos==0:                                        #Top Left Corner
+            N += [pos+1, pos+self.N]
+        elif pos == self.N-1:                               #Top Right Corner
+            N += [pos-1, pos+self.N]
+        elif pos == self.N*(self.N-1):                      #Bottom Left Corner
+            N += [pos+1, pos-self.N]
+        elif pos == self.N*self.N -1:                       #Bottom Right Corner
+            N += [pos-1, pos-self.N]
+        elif pos < self.N:                                  #Top Edge
+            N += [pos-1, pos+1, pos+self.N]
+        elif pos%self.N == 0:                               #Left Edge
+            N += [pos+1, pos+self.N, pos-self.N]
+        elif (pos+1)%self.N == 0:                           #Right Edge
+            N += [pos-1, pos+self.N, pos-self.N]
+        elif pos >= self.N*(self.N-1):                      #Bottom Edge
+            N += [pos-1, pos+1, pos-self.N]
+        else:                                               #Inside
+            N += [pos-1, pos+1, pos+self.N, pos-self.N]
+        return N
+
+
+    def __checkRoadVictory(self, Player):
+        DFSStack = Stack()
+        Visited = set()
+        Win = False
+        F = 'F'                 #Capital for White and lower case for black
+        C = 'C'
+        if(int(Player) != 1):
+            F='f'
+            C='c'
+        for x in range(self.N): #Vertical Roads
+            X = ''
+            if not self.B[x].isEmpty():
+                X = self.B[x].peek()
+            if(X==F or X==C):
+                DFSStack.push(x)
+                Visited.add(x)
+        while(not DFSStack.isEmpty()):
+            Neighbour = self.__getNeighbour(DFSStack.peek())
+            for N in Neighbour:           #Sorry for the Ambiguity between N(Neighbour) and self.N(Board Size)
+                if N >= self.N*(self.N-1):
+                    Win = True
+                    return Win
+                NAdd = 0
+                X = ''
+                if not self.B[N].isEmpty():
+                    X = self.B[N].peek()
+                if not N in Visited:
+                    if(X==F or X==C):
+                        DFSStack.push(N)
+                        Visited.add(N)
+                        NAdd += 1
+                if NAdd == 0 and not DFSStack.isEmpty():
+                    Temp = DFSStack.pop()
+        DFSStack = Stack()
+        Visited = set()
+        for x in range(self.N): #Horizontal Roads
+            X = ''
+            if not self.B[x*self.N].isEmpty():
+                X = self.B[x*self.N].peek()
+            if(X==F or X==C):
+                DFSStack.push(x)
+                Visited.add(x)
+        while(not DFSStack.isEmpty()):
+            Neighbour = self.__getNeighbour(DFSStack.peek())
+            NAdd = 0
+            for N in Neighbour:
+                if (N+1)%self.N == 0:
+                    Win = True
+                    return Win
+                X = ''
+                if not self.B[N].isEmpty():
+                    X = self.B[N].peek()
+                if not N in Visited:
+                    if(X==F or X==C):
+                        DFSStack.push(N)
+                        Visited.add(N)
+                        NAdd += 1
+            if NAdd == 0 and not DFSStack.isEmpty():
+                Temp = DFSStack.pop()
+        return Win 
+
+
+    #def evaluate(self):
+        
+    
+
+    def play(self, diff, Player):
+        if(not self.Flag):
+            if(Player==1):
+                self.move(Player,'a1')
+                return
+            else:
+                if(self.B[0].isEmpty()):
+                    self.move(Player,'a1')
+                else:
+                    self.move(Player,chr(self.N-1 + 97) + str(1)) #e1 for 5x5 and so on
+                return
+        if diff == 1:
+            self.playRandom(Player)
+
+
+    def playRandom(self,Player):
+        all_moves = []
+        all_moves = self.getAllMoves(Player)
+        move = all_moves[random.randint(0, len(all_moves)-1)]
+        print(move)
+        self.move(Player, move)
+
+
     
