@@ -3,6 +3,8 @@
 #This Version is just for Prototyping purpose
 
 from pythonds.basic.stack import Stack
+from Tree import Tree
+import copy
 import random
 
 class Board:
@@ -41,7 +43,7 @@ class Board:
                         if(self.B[pos+1].peek()==F or self.B[pos+1].peek()==C):
                             pos += 1
                 else:
-                    self.Win = True;
+                    self.Win = True
                     self.Winner = Player
                     break
             elif(pos<self.N-1):
@@ -76,7 +78,7 @@ class Board:
                                 pos += self.N
                     
                     if(pos%self.N==self.N-1):
-                        self.Win = True;
+                        self.Win = True
                         self.Winner = Player
                         print(self.Winner,end=F)
                         print(" is the Winner")
@@ -149,9 +151,9 @@ class Board:
                 V=0                         #Directions
                 H=0
                 if(Str[3]=='+'):
-                    V=1
-                if(Str[3]=='-'):
                     V=-1
+                if(Str[3]=='-'):
+                    V=1
                 if(Str[3]=='<'):
                     H=-1
                 if(Str[3]=='>'):
@@ -178,15 +180,15 @@ class Board:
             #self.show()
             print(" ")
             if(Str[0]>='a' and Str[0]<='e'): #for 5x5... Not sure how to check for 6x6 and larger
-                T = 5*(ord(Str[0]) - 97) + int(Str[1]) - 1
+                T = (ord(Str[0]) - 97) + 5*(int(Str[1]) - 1)
                 #print(T)
                 self.B[T].push(F)
             if(Str[0]=='C'): 
-                T = 5*(ord(Str[1]) - 97) + int(Str[2]) - 1
+                T = (ord(Str[1]) - 97) + 5*(int(Str[2]) - 1)
                 #print(T)
                 self.B[T].push(C)
             if(Str[0]=='S'):
-                T = 5*(ord(Str[1]) - 97) + int(Str[2]) - 1
+                T = (ord(Str[1]) - 97) + 5*(int(Str[2]) - 1)
                 self.B[T].push(S)
 
         self.maps()
@@ -197,13 +199,13 @@ class Board:
 
     def strToNum(self,Str):
         if(Str[0]>='a' and Str[0]<='e'): #for 5x5... Not sure how to check for 6x6 and larger #TODO
-            return 5*(ord(Str[0]) - 97) + int(Str[1]) - 1
+            return (ord(Str[0]) - 97) + 5*(5-int(Str[1]))
         if(Str[0]=='C'): 
-            return 5*(ord(Str[1]) - 97) + int(Str[2]) - 1
+            return (ord(Str[1]) - 97) + 5*(5-int(Str[2]))
         if(Str[0]=='S'):
-            return 5*(ord(Str[1]) - 97) + int(Str[2]) - 1
+            return (ord(Str[1]) - 97) + 5*(5-int(Str[2]))
         if(Str[0]>='0' and Str[0]<='5'):
-            return 5*(ord(Str[1]) - 97) + int(Str[2]) - 1
+            return (ord(Str[1]) - 97) + 5*(5-int(Str[2]))
         return -1
 
     def numToStr(self,Num):
@@ -211,7 +213,7 @@ class Board:
             return ''
         col = Num % self.N
         row = int(Num / self.N)
-        return chr(row + 97) + str(col + 1)
+        return chr(col + 97) + str(5-row)
 
     def maps(self):
         for x in range(self.N*self.N):
@@ -255,21 +257,21 @@ class Board:
 
     def getStackMoves(self, sq, Player):
         all_moves = []
-        r = sq % self.N
-        c = sq / self.N
+        r = sq / self.N
+        c = sq % self.N
         size = self.B[sq].size()
         dirs = ['+', '-', '<', '>']
-        up = self.N - 1 - c
-        down = c
-        right = self.N - 1 - r
-        left = r
+        up = r
+        down = self.N - 1 - r
+        right = self.N - 1 - c
+        left = c
         rem_squares = [up, down, left, right]
         for x in range(min(size,self.N)):
             part_list = self.partition(x + 1)
             for di in range(4):
                 part_dir = [part for part in part_list if len(part) <= rem_squares[di]] #######
                 for part in part_dir:
-                    if self.check_valid(x, dirs[di], part):
+                    if self.check_valid(sq, dirs[di], part) == True:
                         part_string = ''.join([str(i) for i in part])
                         all_moves.append(str(sum(part)) + self.numToStr(sq) + dirs[di] + part_string)
         return all_moves
@@ -284,24 +286,23 @@ class Board:
 
     def check_valid(self, square, direction, partition):
         if direction == '+':
-            change = self.N
-        elif direction == '-':
             change = -self.N
+        elif direction == '-':
+            change = +self.N
         elif direction == '>':
             change = 1
         elif direction == '<':
             change = -1
         for i in range(len(partition)):
             next_square = square + change * (i + 1)
+            if self.B[next_square].size() > 0:
+                print(self.B[next_square].peek())
+                print(square,direction)
             if self.B[next_square].size() > 0 and (self.B[next_square].peek() == 'C' or self.B[next_square].peek() == 'c'):
                 return False
-            if self.B[next_square].size() > 0 and (self.B[next_square].peek() == 'S' or self.B[next_square].peek() == 's') and i != len(partition) - 1:
+            if self.B[next_square].size() > 0 and (self.B[next_square].peek() == 'S' or self.B[next_square].peek() == 's'):
                 return False
-            if i == len(partition) - 1 and self.B[next_square].size() > 0 and (self.B[next_square].peek() == 'S' or self.B[next_square].peek() == 's'):
-                return False
-            if i == len(partition) - 1 and self.B[next_square].size() > 0 and (self.B[next_square].peek() == 'C' or self.B[next_square].peek() == 'c'):
-                return False
-            return True
+        return True
 
     def play(self,diff,Player):
         if(not self.Flag):
@@ -323,7 +324,33 @@ class Board:
         move = all_moves[random.randint(0, len(all_moves)-1)]
         print(move)
         self.move(Player, move)
-            
+
+    def getBest(self,Player):
+        depth = 3
+        P = Player - 1
+        all_moves = []
+        all_moves = self.getAllMoves(Player)
+        for move in all_moves:
+            copy1 = Board().fromParent(self)
+            copy1.move(move)
+            copy1.check()
+
+    #def evaluate(self):
+        
+
+    def fromParent(self, parent):
+        self.N = parent.N
+        self.B = parent.B
+        self.Win = parent.Win
+        self.Winner = parent.Winner
+        self.Flag = True        
+        self.Buffer = Stack()    
+        self.Move = parent.Move
+        self.flats = parent.flats
+        self.caps = parent.caps
+        return self
+
+    
                 
 #Bo = Board()
 #Bo.move(1,"c3")
