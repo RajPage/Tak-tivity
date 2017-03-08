@@ -40,10 +40,10 @@ class Board:
         return self
     
 
-    def move(self, Player, Str):
+    def move(self, Player, Str):    
         F = 'F'                 #Caps for White and lower case for black
-        S = 'S'
-        C = 'C'
+        S = 'S'                 #A better representation might be +ve for White, -ve for black 
+        C = 'C'                 #F = 1, S = 2, C = 3. This should be done as Python string manip is complex
         if(self.Flag):          #From Second Move
             if(Str[0]>='0' and Str[0]<='5'):
                 self.movePly(Player, Str)   #Move Ply
@@ -114,8 +114,8 @@ class Board:
                     self.B[Temp].push(self.Buffer.pop())
 
 
-    def strToNum(self,Str):
-        if(Str[0]>='a' and Str[0]<='e'): #for 5x5... Not sure how to check for 6x6 and larger #TODO
+    def strToNum(self,Str):         #For Now Str is in PTN, i.e., Portable Tak Notations only. Other representations are not needed right now
+        if(Str[0]>='a' and Str[0]<=chr(ord('a')+self.N)): 
             return (ord(Str[0]) - 97) + 5*(5-int(Str[1]))
         if(Str[0]=='C'): 
             return (ord(Str[1]) - 97) + 5*(5-int(Str[2]))
@@ -211,7 +211,8 @@ class Board:
             return 1
         elif self.__checkRoadVictory(2):
             return -1
-        #elif self.__checkFlatVictory(1):           #Flat Victory        
+        #elif self.__checkFlatVictory(1):           #Flat Victory
+        return 0                                    #No Victory
 
 
     def __getNeighbour(self, pos):                        #Sorry for the Ambiguity between N(Neighbour) and self.N(Board Size)
@@ -219,27 +220,31 @@ class Board:
         if pos<0 or pos>=(self.N*self.N):                   #Outside
             return N
         elif pos==0:                                        #Top Left Corner
-            N += [pos+1, pos+self.N]
+            N = [pos+1, pos+self.N]
         elif pos == self.N-1:                               #Top Right Corner
-            N += [pos-1, pos+self.N]
+            N = [pos-1, pos+self.N]
         elif pos == self.N*(self.N-1):                      #Bottom Left Corner
-            N += [pos+1, pos-self.N]
+            N = [pos+1, pos-self.N]
         elif pos == self.N*self.N -1:                       #Bottom Right Corner
-            N += [pos-1, pos-self.N]
+            N = [pos-1, pos-self.N]
         elif pos < self.N:                                  #Top Edge
-            N += [pos-1, pos+1, pos+self.N]
+            N = [pos-1, pos+1, pos+self.N]
         elif pos%self.N == 0:                               #Left Edge
-            N += [pos+1, pos+self.N, pos-self.N]
-        elif (pos+1)%self.N == 0:                           #Right Edge
-            N += [pos-1, pos+self.N, pos-self.N]
+            N = [pos+1, pos+self.N, pos-self.N]
+        elif ((pos+1)%self.N) == 0:                         #Right Edge
+            N = [pos-1, pos+self.N, pos-self.N]
         elif pos >= self.N*(self.N-1):                      #Bottom Edge
-            N += [pos-1, pos+1, pos-self.N]
+            N = [pos-1, pos+1, pos-self.N]
         else:                                               #Inside
-            N += [pos-1, pos+1, pos+self.N, pos-self.N]
+            N = [pos-1, pos+1, pos+self.N, pos-self.N]
         return N
 
 
     def __checkRoadVictory(self, Player):
+        return self.__checkVRoad(Player) or self.__checkHRoad(Player)
+    
+
+    def __checkVRoad(self, Player):
         DFSStack = Stack()
         Visited = set()
         Win = False
@@ -257,11 +262,11 @@ class Board:
                 Visited.add(x)
         while(not DFSStack.isEmpty()):
             Neighbour = self.__getNeighbour(DFSStack.peek())
+            NAdd = 0
             for N in Neighbour:           #Sorry for the Ambiguity between N(Neighbour) and self.N(Board Size)
                 if N >= self.N*(self.N-1):
                     Win = True
                     return Win
-                NAdd = 0
                 X = ''
                 if not self.B[N].isEmpty():
                     X = self.B[N].peek()
@@ -269,25 +274,33 @@ class Board:
                     if(X==F or X==C):
                         DFSStack.push(N)
                         Visited.add(N)
-                        NAdd += 1
-                if NAdd == 0 and not DFSStack.isEmpty():
+                        NAdd = 1
+            if NAdd == 0 and not DFSStack.isEmpty():
                     Temp = DFSStack.pop()
+        return Win
+
+
+    def __checkHRoad(self, Player):
         DFSStack = Stack()
         Visited = set()
+        Win = False
+        F = 'F'                 #Capital for White and lower case for black
+        C = 'C'
+        if(int(Player) != 1):
+            F='f'
+            C='c'
         for x in range(self.N): #Horizontal Roads
             X = ''
             if not self.B[x*self.N].isEmpty():
                 X = self.B[x*self.N].peek()
             if(X==F or X==C):
-                DFSStack.push(x)
+                #print(x*self.N+100*Player*2)
+                DFSStack.push(x*self.N)
                 Visited.add(x)
         while(not DFSStack.isEmpty()):
             Neighbour = self.__getNeighbour(DFSStack.peek())
             NAdd = 0
             for N in Neighbour:
-                if (N+1)%self.N == 0:
-                    Win = True
-                    return Win
                 X = ''
                 if not self.B[N].isEmpty():
                     X = self.B[N].peek()
@@ -296,24 +309,76 @@ class Board:
                         DFSStack.push(N)
                         Visited.add(N)
                         NAdd += 1
+                        if (N+1)%self.N == 0:
+                            Win = True
+                            return Win
             if NAdd == 0 and not DFSStack.isEmpty():
                 Temp = DFSStack.pop()
-        return Win 
-
-
-    #def evaluate(self):
+        return Win
         
-    
 
+    def evaluate(self, Player):     #TODO: Threat Score
+        Score = self.checkVictory() * 100000
+        if Score == 0:
+            F = 'F'                 #Caps for White and lower case for black
+            S = 'S'
+            C = 'C'
+            P = 1
+            if(int(Player) != 1):
+                F='f'
+                S='s'
+                C='c'
+                P = -1
+            Flat = 35
+            Cap = 30
+            Wall = 10
+            SelfCaptive = 25
+            NSelfCaptive = 15
+            
+            for x in range(self.N*self.N):
+                factor = 10 * P
+                if(x%self.N==0 or (x+1)%self.N==0 or x<self.N or x>=self.N*(self.N-1)):     #Edges Will have less influence
+                    factor = 7 * P
+                if not self.B[x].isEmpty():
+                    size = self.B[x].size()
+                    T = self.B[x].ps(size)
+                    if T[size-1]==F:
+                        Score += Flat * factor
+                        for t in T:                 #This is also considering the topmost piece. Will have to see how it affects the performance later
+                            if t==F:
+                                Score += SelfCaptive * factor
+                            else:
+                                Score += NSelfCaptive * factor
+                    if T[size-1]==C:
+                        Score += Cap * factor
+                        for t in T:                 
+                            if t==F:
+                                Score += SelfCaptive * factor
+                            else:
+                                Score += NSelfCaptive * factor
+                    if T[size-1]==S:
+                        Score += Wall * factor
+                        for t in T:                 
+                            if t==F:
+                                Score += SelfCaptive * factor
+                            else:
+                                Score += NSelfCaptive * factor
+        return Score
+                        
+
+    def playMM(self,Player,depth):
+        
+
+    
     def play(self, diff, Player):
         if(not self.Flag):
             if(Player==1):
                 self.move(Player,'a1')
                 return
             else:
-                if(self.B[0].isEmpty()):
+                if(self.B[0].isEmpty()):        #Hardcoded as there is no need for a complex code here. We need to put opponent in corners.
                     self.move(Player,'a1')
-                else:
+                else:                           #Since it is the First Move, One of these two squares is bound to be empty
                     self.move(Player,chr(self.N-1 + 97) + str(1)) #e1 for 5x5 and so on
                 return
         if diff == 1:
